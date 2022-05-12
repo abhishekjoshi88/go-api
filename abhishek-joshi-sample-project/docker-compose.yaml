@@ -1,0 +1,44 @@
+version: '3.6'
+
+services:
+  app:
+    build:
+      dockerfile: dockerfile
+      context: .
+    ports:
+    - 1323:1323
+    restart: on-failure
+    depends_on:
+      - mysql
+    env_file:
+      - ./.env
+    networks:
+      - fullstack
+
+  mysql:
+    image: mysql
+    restart: always
+    ports:
+      - 3306:3306
+    environment:
+        MYSQL_ROOT_HOST: localhost
+        MYSQL_ROOT_PASSWORD: root
+        MYSQL_DATABASE: mydb
+        MYSQL_USER: user
+        MYSQL_PASSWORD: user
+    
+    volumes: 
+    - ./init:/docker-entrypoint-initdb.d
+    - app_db:/var/lib/mysql
+    networks:
+      - fullstack
+
+
+
+
+volumes:
+  app_db:
+
+networks:
+  fullstack:
+    driver: bridge

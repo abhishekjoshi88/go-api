@@ -1,0 +1,26 @@
+FROM migrate/migrate:v4.15.0 AS migrate
+FROM golang:1.17-alpine AS builder
+RUN apk add git
+# Set the current working directory.
+RUN mkdir -p /config-api
+WORKDIR /config-api
+# install the modules 
+COPY go.mod . 
+COPY go.sum .
+RUN go mod download
+COPY . .
+# Build executable binary
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -ldflags="-w -s" -o config-api main.go
+# Remove unnecessary folders
+RUN rm -Rf tools
+# Build the final image
+FROM alpine:3.14
+# Set the current working directory.
+WORKDIR /config-api
+COPY --from=builder /config-api /config-api
+COPY --from=builder /config-api/config.yml.example /config-api/config.yml
+COPY --from=migrate /usr/bin/migrate /usr/local/bin/migrate
+EXPOSE 1323
+CMD ["./config-api"]
+
+
